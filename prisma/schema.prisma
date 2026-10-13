@@ -1,0 +1,54 @@
+// NapasSehat Palembang – Prisma Schema (v7 config-based)
+// Connection is declared in prisma.config.ts via PrismaPg adapter.
+// Run: npm run db:push    (dev prototype)
+//      npm run db:migrate (production migrations)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Caches hourly AQI and PM2.5 snapshots from the Open-Meteo API for
+/// Palembang (lat: -2.9909, lon: 104.7566).
+model AirQualityLog {
+  id               String   @id @default(cuid())
+  fetchedAt        DateTime @default(now())
+  /// ISO-8601 hour bucket this record represents (e.g. "2024-06-01T08:00:00Z")
+  hourBucket       DateTime
+  usAqi            Int
+  pm25             Float
+  pm10             Float?
+  carbonMonoxide   Float?
+  temperature      Float?
+  relativeHumidity Float?
+  windSpeed        Float?
+  aqiCategory      String
+
+  @@map("air_quality_logs")
+}
+
+/// Stores a single ISPA health-screening submission by an end-user.
+model ScreeningAssessment {
+  id                      String   @id @default(cuid())
+  fullName                String
+  age                     Int
+  // ── Symptom flags ──────────────────────────────────────────────────────
+  hasShortnessOfBreath    Boolean  @default(false)
+  hasChronicCough         Boolean  @default(false)
+  hasPreExistingCondition Boolean  @default(false)
+  hasSoreThroat           Boolean  @default(false)
+  hasIrritatedEyes        Boolean  @default(false)
+  // ── Scoring ────────────────────────────────────────────────────────────
+  calculatedScore         Int
+  /// "LOW" | "MEDIUM" | "HIGH"
+  riskLevel               String
+  /// JSON-serialised RecommendationItem[]
+  recommendations         String
+  createdAt               DateTime @default(now())
+
+  @@map("screening_assessments")
+}
